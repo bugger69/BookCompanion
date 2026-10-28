@@ -13,16 +13,17 @@ def fetchModels():
     # fetching model to read
     model = input("Please pick an open source model: ").strip()
     if not model:
-        print("Using default model")
+        print("Using default model........")
         model = default
     result = subprocess.run(["ollama", "pull", model])
     if not result:
         print("Unable to pull model.")
         sys.exit()
     # fetching parser model
-    indexer = input("Please pick a parser model: ").strip()
+    if not model == default:
+        indexer = input("Please pick a parser model: ").strip()
     if not indexer or model == default:
-        print("Using default embedder")
+        print("Using default embedder.........")
         indexer = embedder
     result = subprocess.run(["ollama", "pull", embedder])
     if not result:
