@@ -32,10 +32,17 @@ def fetchModels():
         sys.exit()
     return result
 
+def extractFilename(filepath):
+    filename = filepath
+    # Add processing logic to this
+    return filename
+
 
 def main(filepath):
-    # fetchModels()
-    print(filepath)
+    bookfile = extractFilename(filepath)
+    dbPath = f"./{bookfile}"
+    print(dbPath)
+    #fetchModels()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
