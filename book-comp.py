@@ -1,6 +1,7 @@
 import subprocess
 import shutil
 import sys
+import argparse
 
 def fetchModels():
     ollama_path = shutil.which("ollama")
@@ -32,8 +33,13 @@ def fetchModels():
     return result
 
 
-def main():
-    fetchModels()
+def main(filepath):
+    # fetchModels()
+    print(filepath)
 
-main()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filepath", help="Path to book file")
+    args = parser.parse_args()
+    main(args.filepath)
 
