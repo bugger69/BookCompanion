@@ -92,6 +92,14 @@ def insertIntoChroma(filepath, text, client, collection):
         ids.append(id)
         metadatas.append(metadata)
     collection.add(ids=ids, documents=chunks, metadatas=metadatas)
+    # saved = collection.get(ids=ids, include=["documents", "metadatas"])
+    # matches = (
+    #     saved["ids"] == ids
+    #     and saved["documents"] == chunks
+    #     and saved["metadatas"] == metadatas
+    # )
+    # print(f"DB write {'OK' if matches else 'FAILED'}: {bookName}")
+    # print(chunks[0])
 
 
 def main(filepath):
