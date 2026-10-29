@@ -2,11 +2,23 @@ import subprocess
 import shutil
 import sys
 import argparse
+import random
+import ebooklib
+from pathlib import Path
+from pypdf import PdfReader
+from ebooklib import epub
+from bs4 import BeautifulSoup
+import ollama
+import chromadb
+
+DB_PATH="./book-db"
+default = "llama3.2"
+embedder = "nomic-embed-text"
+model=""
+indexer=""
 
 def fetchModels():
     ollama_path = shutil.which("ollama")
-    default = "llama3.2"
-    embedder = "nomic-embed-text"
     result = ""
     if not ollama_path:
         print("Ollama not found, please install it first")
@@ -33,16 +45,61 @@ def fetchModels():
     return result
 
 def extractFilename(filepath):
-    filename = filepath
-    # Add processing logic to this
+    path = Path(filepath)
+    filename = path.name
     return filename
+
+def extractText(filepath):
+    path = Path(filepath)
+    suffix = path.suffix.lower()
+    text = []
+    if suffix == ".pdf":
+        reader = PdfReader(path)
+        pages = []
+        for page in reader.pages:
+            txt = page.extract_text()
+            pages.append(txt)
+        text = "\n\n".join(pages)
+    elif suffix == ".epub":
+        book = epub.read_epub(str(path))
+        sections = []
+        for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
+            soup = BeautifulSoup(item.get_content(), "html.parser")
+            sections.append(soup.get_text(" ", strip=True))
+            text = "\n\n".join(sections)
+    elif suffix in {".txt", ".md"}:
+        text = path.read_text(encoding="utf-8")
+    else:
+        raise ValueError(f"Unsupported file type: {suffix}")
+    return text
+
+
+def initChroma():
+    client = chromadb.PersistentClient(path=DB_PATH)
+    collection = client.get_or_create_collection(name="books")
+    return client, collection
+
+
+def insertIntoChroma(filepath, text, client, collection):
+    bookName = extractFilename(filepath)
+    bookId = random.randint(1, 2147483647)
+    chunks = [text]
+    ids = []
+    metadatas = []
+    for i in range(len(chunks)):
+        id = f"{bookId}-{i}"
+        metadata = {"book": bookName, "chunk": i}
+        ids.append(id)
+        metadatas.append(metadata)
+    collection.add(ids=ids, documents=chunks, metadatas=metadatas)
 
 
 def main(filepath):
-    bookfile = extractFilename(filepath)
-    dbPath = f"./{bookfile}"
-    print(dbPath)
     #fetchModels()
+    dbPath = DB_PATH
+    client, collection = initChroma()
+    text = extractText(filepath)
+    insertIntoChroma(filepath, text, client, collection)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
