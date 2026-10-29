@@ -8,6 +8,7 @@ from pathlib import Path
 from pypdf import PdfReader
 from ebooklib import epub
 from bs4 import BeautifulSoup
+import re
 import ollama
 import chromadb
 
@@ -16,6 +17,7 @@ default = "llama3.2"
 embedder = "nomic-embed-text"
 model=""
 indexer=""
+
 
 def fetchModels():
     ollama_path = shutil.which("ollama")
@@ -44,10 +46,12 @@ def fetchModels():
         sys.exit()
     return result
 
+
 def extractFilename(filepath):
     path = Path(filepath)
     filename = path.name
     return filename
+
 
 def extractText(filepath):
     path = Path(filepath)
@@ -59,16 +63,25 @@ def extractText(filepath):
         for page in reader.pages:
             txt = page.extract_text()
             pages.append(txt)
-        text = "\n\n".join(pages)
+        text = pages
     elif suffix == ".epub":
         book = epub.read_epub(str(path))
         sections = []
         for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
             soup = BeautifulSoup(item.get_content(), "html.parser")
             sections.append(soup.get_text(" ", strip=True))
-            text = "\n\n".join(sections)
+        text = sections
     elif suffix in {".txt", ".md"}:
-        text = path.read_text(encoding="utf-8")
+        txt = path.read_text(encoding="utf-8")
+        paras = re.split(r"\n\s*\n", text.strip())
+        largePara = ""
+        i = 0
+        for para in paras:
+            largePara = largePara + para
+            i = i + 1
+            if i % 5 == 0:
+                text.append(largePara)
+                largePara = ""
     else:
         raise ValueError(f"Unsupported file type: {suffix}")
     return text
@@ -83,12 +96,12 @@ def initChroma():
 def insertIntoChroma(filepath, text, client, collection):
     bookName = extractFilename(filepath)
     bookId = random.randint(1, 2147483647)
-    chunks = [text]
+    chunks = text
     ids = []
     metadatas = []
     for i in range(len(chunks)):
         id = f"{bookId}-{i}"
-        metadata = {"book": bookName, "chunk": i}
+        metadata = {"book": bookName, "page": i, "chapter": "none"}
         ids.append(id)
         metadatas.append(metadata)
     collection.add(ids=ids, documents=chunks, metadatas=metadatas)
@@ -100,6 +113,11 @@ def insertIntoChroma(filepath, text, client, collection):
     # )
     # print(f"DB write {'OK' if matches else 'FAILED'}: {bookName}")
     # print(chunks[0])
+    # print(chunks[1])
+
+
+def chatWithLLM(client, collection):
+    return ""
 
 
 def main(filepath):
@@ -108,6 +126,8 @@ def main(filepath):
     client, collection = initChroma()
     text = extractText(filepath)
     insertIntoChroma(filepath, text, client, collection)
+    chatWithLLM(client, collection)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
