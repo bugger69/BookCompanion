@@ -11,12 +11,15 @@ from bs4 import BeautifulSoup
 import re
 import ollama
 import chromadb
+from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
+from ollama import chat
 
 DB_PATH="./book-db"
 default = "llama3.2"
 embedder = "nomic-embed-text"
 model=""
 indexer=""
+messages = []
 
 
 def fetchModels():
@@ -89,7 +92,11 @@ def extractText(filepath):
 
 def initChroma():
     client = chromadb.PersistentClient(path=DB_PATH)
-    collection = client.get_or_create_collection(name="books")
+    ollama_ef = OllamaEmbeddingFunction(
+        url="http://localhost:11434",
+        model_name=embedder,
+    )
+    collection = client.get_or_create_collection(name="books-ollama", embedding_function=ollama_ef)
     return client, collection
 
 
@@ -99,12 +106,19 @@ def insertIntoChroma(filepath, text, client, collection):
     chunks = text
     ids = []
     metadatas = []
+    batch_size = 32
     for i in range(len(chunks)):
         id = f"{bookId}-{i}"
         metadata = {"book": bookName, "page": i, "chapter": "none"}
         ids.append(id)
         metadatas.append(metadata)
-    collection.add(ids=ids, documents=chunks, metadatas=metadatas)
+    for start in range(0, len(chunks), batch_size):
+        end = start + batch_size
+        collection.add(
+            ids=ids[start:end],
+            documents=chunks[start:end],
+            metadatas=metadatas[start:end],
+        )
     # saved = collection.get(ids=ids, include=["documents", "metadatas"])
     # matches = (
     #     saved["ids"] == ids
@@ -116,17 +130,47 @@ def insertIntoChroma(filepath, text, client, collection):
     # print(chunks[1])
 
 
-def chatWithLLM(client, collection):
-    return ""
+def queryChroma(collection, query, book):
+    qOb = {
+        "query_texts": query,
+        "n_results": 5,
+        "where": {"book" : book},
+        "include":["documents", "metadatas", "distances"]
+    }
+    results = collection.query(query_texts=qOb["query_texts"], n_results=qOb["n_results"], where=qOb["where"], include=qOb["include"])
+    return results
+
+
+def chatWithLLM(client, collection, book):
+    print("Send your query to the model:")
+    while True:
+        query = input()
+        msg = {
+            "role" : "user",
+            "content": query
+        }
+        messages.append(msg)
+        result = chat(
+            model=default,
+            messages=[msg]
+        )
+        resText = result.message.content
+        resp = {
+            "role" : "LLM",
+            "content": resText
+        }
+        messages.append(resp)
+        print(resText)
 
 
 def main(filepath):
     #fetchModels()
     dbPath = DB_PATH
     client, collection = initChroma()
+    book = extractFilename(filepath)
     text = extractText(filepath)
     insertIntoChroma(filepath, text, client, collection)
-    chatWithLLM(client, collection)
+    chatWithLLM(client, collection, book)
 
 
 if __name__ == "__main__":
