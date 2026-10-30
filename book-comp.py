@@ -21,6 +21,26 @@ model=""
 indexer=""
 messages = []
 
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "search_book",
+        "description": "Search the selected book for passages relevant to a question.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "What to search for in the book",
+                }
+            },
+            "required": ["query"],
+        },
+    },
+}]
+
+
+
 
 def fetchModels():
     ollama_path = shutil.which("ollama")
@@ -50,10 +70,12 @@ def fetchModels():
     return result
 
 
+
 def extractFilename(filepath):
     path = Path(filepath)
     filename = path.name
     return filename
+
 
 
 def extractText(filepath):
@@ -90,6 +112,7 @@ def extractText(filepath):
     return text
 
 
+
 def initChroma():
     client = chromadb.PersistentClient(path=DB_PATH)
     ollama_ef = OllamaEmbeddingFunction(
@@ -98,6 +121,7 @@ def initChroma():
     )
     collection = client.get_or_create_collection(name="books-ollama", embedding_function=ollama_ef)
     return client, collection
+
 
 
 def insertIntoChroma(filepath, text, client, collection):
@@ -130,6 +154,7 @@ def insertIntoChroma(filepath, text, client, collection):
     # print(chunks[1])
 
 
+
 def queryChroma(collection, query, book):
     qOb = {
         "query_texts": query,
@@ -141,6 +166,7 @@ def queryChroma(collection, query, book):
     return results
 
 
+
 def chatWithLLM(client, collection, book):
     print("Send your query to the model:")
     while True:
@@ -150,17 +176,30 @@ def chatWithLLM(client, collection, book):
             "content": query
         }
         messages.append(msg)
-        result = chat(
+        res = chat(
             model=default,
-            messages=[msg]
+            messages=messages,
+            tools=tools
         )
-        resText = result.message.content
+        while res.message.tool_calls:
+            messages.append(res.message)
+            for tool_call in res.message.tool_calls:
+                if tool_call.function.name != "search_book":
+                    raise ValueError(f"Unknown tool: {tool_call.function.name}")
+                search_query = tool_call.function.arguments["query"]
+                results = queryChroma(collection, search_query, book)
+                documents = results["documents"][0]
+                tool_result = "\n\n".join(documents) if documents else "No matching passages found."
+                messages.append({"role":"tool", "content": tool_result})
+            res = chat(model=default, messages=messages, tools=tools)
+        resText = res.message.content
         resp = {
             "role" : "LLM",
             "content": resText
         }
         messages.append(resp)
         print(resText)
+
 
 
 def main(filepath):
