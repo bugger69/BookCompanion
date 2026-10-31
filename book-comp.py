@@ -228,7 +228,9 @@ def main(filepath):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("filepath", help="Path to book file")
+    parser.add_argument("--setup", action="store_true")
     args = parser.parse_args()
+    if(args.setup): fetchModels()
     main(args.filepath)
 
 # TODO: visible working state, streamed replies, improved prompt history and answer formatting. 
