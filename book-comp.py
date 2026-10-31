@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import re
 import ollama
 import chromadb
+import os
 from chromadb.utils.embedding_functions import OllamaEmbeddingFunction
 from ollama import chat
 
@@ -20,6 +21,14 @@ embedder = "nomic-embed-text"
 model=""
 indexer=""
 messages = []
+
+
+def style(text, *codes):
+    if not sys.stdout.isatty() or not sys.stdin.isatty() or os.environ.get("NO_COLOR"):
+        return text
+    return f"\033[{';'.join(codes)}m{text}\033[0m"
+
+
 
 tools = [{
     "type": "function",
@@ -168,9 +177,12 @@ def queryChroma(collection, query, book):
 
 
 def chatWithLLM(client, collection, book):
-    print("Send your query to the model:")
+    print()
+    print(style("  BOOK COMPANION", "1", "36"))
+    print(f"  Reading: {style(book, '1')}")
+    print("  Ask a question about this book. Press Ctrl+C to exit.")
     while True:
-        query = input()
+        query = input(f"\n{style('You', '1', '36')} > ")
         msg = {
             "role" : "user",
             "content": query
@@ -198,6 +210,8 @@ def chatWithLLM(client, collection, book):
             "content": resText
         }
         messages.append(resp)
+        print(f"\n{style('BOOK COMPANION ', '1', '32')}")
+        print(style("─" * 48, "2"))
         print(resText)
 
 
@@ -218,3 +232,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     main(args.filepath)
 
+# TODO: visible working state, streamed replies, improved prompt history and answer formatting. 
