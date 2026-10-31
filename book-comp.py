@@ -23,13 +23,6 @@ indexer=""
 messages = []
 
 
-def style(text, *codes):
-    if not sys.stdout.isatty() or not sys.stdin.isatty() or os.environ.get("NO_COLOR"):
-        return text
-    return f"\033[{';'.join(codes)}m{text}\033[0m"
-
-
-
 tools = [{
     "type": "function",
     "function": {
@@ -48,6 +41,12 @@ tools = [{
     },
 }]
 
+
+
+def style(text, *codes):
+    if not sys.stdout.isatty() or not sys.stdin.isatty() or os.environ.get("NO_COLOR"):
+        return text
+    return f"\033[{';'.join(codes)}m{text}\033[0m"
 
 
 
