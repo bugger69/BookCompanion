@@ -209,7 +209,7 @@ def chatWithLLM(client, collection, book):
             "content": resText
         }
         messages.append(resp)
-        print(f"\n{style('BOOK COMPANION ', '1', '32')}")
+        print(f"\n{style('BOOK COMPANION > ', '1', '32')}")
         print(style("─" * 48, "2"))
         print(resText)
 
