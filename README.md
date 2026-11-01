@@ -10,4 +10,4 @@ or use this if you have ollama and want to pull the right models:
 book-comp <path/to/book> --setup
 ```
 
-Note: this isn't working yet, will soon
+You can also use companion.ps1 in order to install it in your windows cli.
