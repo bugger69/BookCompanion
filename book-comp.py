@@ -66,9 +66,8 @@ def fetchModels():
         print("Unable to pull model.")
         sys.exit()
     # fetching parser model
-    if not model == default:
-        indexer = input("Please pick a parser model: ").strip()
-    if not indexer or model == default:
+    indexer = input("Please pick a parser model: ").strip()
+    if not indexer or indexer == "":
         print("Using default embedder.........")
         indexer = embedder
     result = subprocess.run(["ollama", "pull", embedder])

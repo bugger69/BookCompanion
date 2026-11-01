@@ -6,7 +6,11 @@ if "%~1"=="" (
 
 set "BOOK_PATH=%~f1"
 pushd "%~dp0"
-py book-comp.py "%BOOK_PATH%"
+if /I "%~2"=="--setup" (
+    py book-comp.py "%BOOK_PATH%" --setup
+) else (
+    py book-comp.py "%BOOK_PATH%"
+)
 set "EXIT_CODE=%ERRORLEVEL%"
 popd
 exit /b %EXIT_CODE%
