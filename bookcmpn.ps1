@@ -7,7 +7,7 @@ $userEntries = @($userPath -split ";" | Where-Object { $_ })
 New-Item -ItemType Directory -Path $installDir -Force
 
 # Copy the app files from this script's folder
-Copy-Item (Join-Path $PSScriptRoot "companion.bat") $installDir
+Copy-Item (Join-Path $PSScriptRoot "bookcmpn.bat") $installDir
 Copy-Item (Join-Path $PSScriptRoot "book-comp.py") $installDir
 
 if ($userEntries -notcontains $installDir) {
