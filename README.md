@@ -1,13 +1,26 @@
 # Book Companion
 
-Run the following, you might get a prompt asking for model and embedder(press Enter to use defaults.)
+Run the following after you've installed ollama:
 ```bash
 book-comp <path/to/book>
 ```
+or this directly from the root folder:
+```bash
+.\bookcmpn.bat "C:\path\to\book.pdf"
+```
 
-or use this if you have ollama and want to pull the right models:
+Or use this if you have ollama, running for the first time and want to pull the models(default or as per your need):
 ```bash
 book-comp <path/to/book> --setup
 ```
 
-You can also use companion.ps1 in order to install it in your windows cli.
+You can also use companion.ps1 or companion.sh in order to install it depending on your OS.
+Install on windows:
+```powershell
+./bookcmpn.ps1
+```
+
+Install on linux:
+```sh
+./bookcmpn.sh
+```
