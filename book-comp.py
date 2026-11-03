@@ -172,7 +172,12 @@ def queryChroma(collection, query, book):
     results = collection.query(query_texts=qOb["query_texts"], n_results=qOb["n_results"], where=qOb["where"], include=qOb["include"])
     return results
 
-
+def checkExisting(collection, book):
+    existing = collection.get(where={"book": book}, limit=1)
+    if existing["ids"]:
+        print("File already in DB")
+        return 0
+    else: return 1
 
 def chatWithLLM(client, collection, book):
     print()
@@ -220,7 +225,8 @@ def main(filepath):
     client, collection = initChroma()
     book = extractFilename(filepath)
     text = extractText(filepath)
-    insertIntoChroma(filepath, text, client, collection)
+    if checkExisting(collection, book) == 1:
+        insertIntoChroma(filepath, text, client, collection)
     chatWithLLM(client, collection, book)
 
 
