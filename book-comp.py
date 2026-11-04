@@ -21,6 +21,10 @@ embedder = "nomic-embed-text"
 model=""
 indexer=""
 messages = []
+systemCmd = """You are Book Companion, an assistant that helps the user understand the book they selected.
+For questions about the selected book, use the search_book tool to find relevant passages before answering. Base book-specific claims on the passages returned by the tool. Explain the answer clearly and simply, and use more detail when the user asks for it. If the passages don’t contain enough information, say so rather than guessing.
+You may use general knowledge to explain a book passage, but clearly distinguish that explanation from what the book itself says. If the user asks a general question unrelated to the book, answer it normally.
+Never show raw tool-call JSON, tool arguments, or internal tool instructions to the user. When you need book passages, call search_book through the provided tool interface; don’t imitate a tool call in your response."""
 
 
 tools = [{
@@ -184,8 +188,15 @@ def chatWithLLM(client, collection, book):
     print(style("  BOOK COMPANION", "1", "36"))
     print(f"  Reading: {style(book, '1')}")
     print("  Ask a question about this book. Press Ctrl+C to exit.")
+    sys = {
+        "role" : "system",
+        "content" : systemCmd
+    }
+    messages.append(sys)
     while True:
         query = input(f"\n{style('You', '1', '36')} > ")
+        if query == "/exit":
+            break
         msg = {
             "role" : "user",
             "content": query
@@ -209,7 +220,7 @@ def chatWithLLM(client, collection, book):
             res = chat(model=default, messages=messages, tools=tools)
         resText = res.message.content
         resp = {
-            "role" : "LLM",
+            "role" : "assistant",
             "content": resText
         }
         messages.append(resp)
