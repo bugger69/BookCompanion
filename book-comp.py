@@ -235,8 +235,8 @@ def main(filepath):
     dbPath = DB_PATH
     client, collection = initChroma()
     book = extractFilename(filepath)
-    text = extractText(filepath)
     if checkExisting(collection, book) == 1:
+        text = extractText(filepath)
         insertIntoChroma(filepath, text, client, collection)
     chatWithLLM(client, collection, book)
 
