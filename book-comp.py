@@ -187,7 +187,7 @@ def chatWithLLM(client, collection, book):
     print()
     print(style("  BOOK COMPANION", "1", "36"))
     print(f"  Reading: {style(book, '1')}")
-    print("  Ask a question about this book. Press Ctrl+C to exit.")
+    print("  Ask a question about this book. Type /exit to exit.")
     sys = {
         "role" : "system",
         "content" : systemCmd
